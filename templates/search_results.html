@@ -1,0 +1,753 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <!-- Search Header -->
+    <div class="search-header mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="page-title mb-2">Search Results</h1>
+                <p class="page-subtitle text-muted">
+                    {% if properties %}
+                        Found {{ properties|length }} property{% if properties|length != 1 %}ies{% endif %} matching your criteria
+                    {% else %}
+                        No properties found matching your criteria
+                    {% endif %}
+                </p>
+            </div>
+            <div class="search-actions">
+                <button class="btn btn-outline-secondary" id="filterToggle">
+                    <i class="fas fa-sliders-h me-2"></i>Filters
+                </button>
+            </div>
+        </div>
+
+        <!-- Search Filters -->
+        <div class="search-filters card mb-4" id="searchFilters">
+            <div class="card-body">
+                <form class="row g-3" action="{{ url_for('search') }}" method="get">
+                    <div class="col-md-4">
+                        <label class="form-label">Search</label>
+                        <input type="text" class="form-control" name="q" value="{{ request.args.get('q', '') }}" 
+                               placeholder="Search by title or location...">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Min Rent</label>
+                        <input type="number" class="form-control" name="min_rent" 
+                               value="{{ request.args.get('min_rent', '') }}" placeholder="₹ Min">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Max Rent</label>
+                        <input type="number" class="form-control" name="max_rent" 
+                               value="{{ request.args.get('max_rent', '') }}" placeholder="₹ Max">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Property Type</label>
+                        <select name="type" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="1BHK" {% if request.args.get('type') == '1BHK' %}selected{% endif %}>1BHK</option>
+                            <option value="2BHK" {% if request.args.get('type') == '2BHK' %}selected{% endif %}>2BHK</option>
+                            <option value="3BHK" {% if request.args.get('type') == '3BHK' %}selected{% endif %}>3BHK</option>
+                            <option value="Flat" {% if request.args.get('type') == 'Flat' %}selected{% endif %}>Flat</option>
+                            <option value="Villa" {% if request.args.get('type') == 'Villa' %}selected{% endif %}>Villa</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Active Filters -->
+        {% if request.args %}
+        <div class="active-filters mb-4">
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="filter-label">Active filters:</span>
+                {% for key, value in request.args.items() %}
+                    {% if value and key != 'q' %}
+                    <span class="filter-badge">
+                        {{ key.replace('_', ' ').title() }}: {{ value }}
+                        <a href="{{ url_for('search', **dict(request.args, **{key: ''})) }}" class="remove-filter">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    </span>
+                    {% endif %}
+                {% endfor %}
+                {% if request.args.get('q') %}
+                <span class="filter-badge">
+                    Search: "{{ request.args.get('q') }}"
+                    <a href="{{ url_for('search', **dict(request.args, **{'q': ''})) }}" class="remove-filter">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </span>
+                {% endif %}
+                <a href="{{ url_for('search') }}" class="clear-all">Clear all</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Results Section -->
+    {% if properties %}
+    <div class="results-section">
+            <!-- Sort Options -->
+<div class="sort-options mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <div class="results-count">
+            Showing <strong>{{ properties|length }}</strong> propert{% if properties|length != 1 %}ies{% else %}y{% endif %}
+        </div>
+        <div class="sort-controls">
+            <form method="get" action="{{ url_for('search') }}" id="sortForm" class="d-flex align-items-center gap-2">
+                <!-- Preserve all existing search filters -->
+                {% if request.args.get('q') %}
+                <input type="hidden" name="q" value="{{ request.args.get('q') }}">
+                {% endif %}
+                {% if request.args.get('min_rent') %}
+                <input type="hidden" name="min_rent" value="{{ request.args.get('min_rent') }}">
+                {% endif %}
+                {% if request.args.get('max_rent') %}
+                <input type="hidden" name="max_rent" value="{{ request.args.get('max_rent') }}">
+                {% endif %}
+                {% if request.args.get('type') %}
+                <input type="hidden" name="type" value="{{ request.args.get('type') }}">
+                {% endif %}
+                
+                <label class="form-label mb-0 me-2">Sort by:</label>
+                <select name="sort" class="form-select sort-select" onchange="document.getElementById('sortForm').submit()">
+                    <option value="relevance" {% if request.args.get('sort') == 'relevance' or not request.args.get('sort') %}selected{% endif %}>Relevance</option>
+                    <option value="rent_low" {% if request.args.get('sort') == 'rent_low' %}selected{% endif %}>Rent: Low to High</option>
+                    <option value="rent_high" {% if request.args.get('sort') == 'rent_high' %}selected{% endif %}>Rent: High to Low</option>
+                    <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest First</option>
+                    <option value="oldest" {% if request.args.get('sort') == 'oldest' %}selected{% endif %}>Oldest First</option>
+                </select>
+            </form>
+        </div>
+    </div>
+</div>
+
+        <!-- Properties Grid -->
+        <div class="properties-grid">
+            <div class="row">
+                {% for p in properties %}
+                <div class="col-xl-4 col-lg-6 mb-4">
+                    <div class="property-card">
+                        <div class="property-image-container">
+                            {% if p.get_images() %}
+<img src="{{ url_for('uploaded_file', filename=p.get_images()[0]) }}" 
+     class="property-image" 
+     alt="{{ p.title }}">
+{% else %}
+<div class="property-image-placeholder">
+    <i class="fas fa-home"></i>
+    <span>No Image</span>
+</div>
+{% endif %}
+                            {% if p.get_images() %}
+<img src="{{ url_for('uploaded_file', filename=p.get_images()[0]) }}" 
+     class="property-image" 
+     alt="{{ p.title }}">
+{% else %}
+<div class="property-image-placeholder">
+    <i class="fas fa-home"></i>
+    <span>No Image</span>
+</div>
+{% endif %}
+                            <div class="property-badge">{{ p.property_type }}</div>
+                            <div class="property-overlay">
+                                <div class="property-actions">
+                                    <a href="{{ url_for('property_detail', prop_id=p.id) }}" class="btn-action view" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn-action favorite" title="Add to Favorites">
+                                        <i class="far fa-heart"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="property-content">
+                            <h5 class="property-title">{{ p.title }}</h5>
+                            
+                            <div class="property-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>{{ p.location }}</span>
+                            </div>
+                            
+                            <div class="property-price">₹{{ p.rent }}/month</div>
+                            
+                            <div class="property-features">
+                                <div class="feature">
+                                    <i class="fas fa-bed"></i>
+                                    <span>
+                                        {% if p.property_type == '1BHK' %}1 Bed
+                                        {% elif p.property_type == '2BHK' %}2 Beds
+                                        {% elif p.property_type == '3BHK' %}3 Beds
+                                        {% else %}2+ Beds{% endif %}
+                                    </span>
+                                </div>
+                                <div class="feature">
+                                    <i class="fas fa-bath"></i>
+                                    <span>2 Baths</span>
+                                </div>
+                                <div class="feature">
+                                    <i class="fas fa-vector-square"></i>
+                                    <span>1200 sq.ft.</span>
+                                </div>
+                            </div>
+                            
+                            <div class="property-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span>{{ p.owner.name }}</span>
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>{{ p.created_at.strftime('%b %d') if p.created_at else 'Recently' }}</span>
+                                </div>
+                            </div>
+                            
+                            <a href="{{ url_for('property_detail', prop_id=p.id) }}" class="btn btn-primary btn-view">
+                                <i class="fas fa-eye me-2"></i> View Details
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination-section mt-5">
+            <nav aria-label="Search results pagination">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% else %}
+    <!-- No Results State -->
+    <div class="no-results text-center py-5">
+        <div class="no-results-icon mb-4">
+            <i class="fas fa-search"></i>
+        </div>
+        <h3 class="mb-3">No Properties Found</h3>
+        <p class="text-muted mb-4">We couldn't find any properties matching your search criteria.</p>
+        <div class="suggestions">
+            <p class="text-muted mb-3">Try adjusting your search:</p>
+            <ul class="list-unstyled">
+                <li class="mb-2">• Check the spelling of your search terms</li>
+                <li class="mb-2">• Try more general keywords</li>
+                <li class="mb-2">• Adjust your price range</li>
+                <li class="mb-2">• Browse all properties instead</li>
+            </ul>
+        </div>
+        <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-home me-2"></i>Browse All Properties
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<style>
+    .search-header {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 20px;
+    }
+    
+    .page-title {
+        font-weight: 700;
+        color: var(--dark-color);
+        margin: 0;
+    }
+    
+    .page-subtitle {
+        font-size: 1rem;
+        margin: 0;
+        color: #6c757d;
+    }
+    
+    /* Search Filters */
+    .search-filters {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .search-filters .form-control,
+    .search-filters .form-select {
+        border-radius: 8px;
+        padding: 10px 15px;
+        border: 1px solid #ddd;
+        transition: all 0.3s;
+    }
+    
+    .search-filters .form-control:focus,
+    .search-filters .form-select:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+    
+    .btn-outline-secondary {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 500;
+    }
+    
+    /* Active Filters */
+    .active-filters {
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    
+    .filter-label {
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    
+    .filter-badge {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .remove-filter {
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 0.8rem;
+    }
+    
+    .remove-filter:hover {
+        color: var(--accent-color);
+    }
+    
+    .clear-all {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .clear-all:hover {
+        text-decoration: underline;
+    }
+    
+    /* Sort Options */
+    .sort-options {
+        padding: 15px 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+    
+    .results-count {
+        color: var(--dark-color);
+        font-weight: 500;
+    }
+    
+    .sort-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .sort-select {
+        width: auto;
+        min-width: 180px;
+    }
+    
+    /* Property Cards */
+    .property-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .property-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+    
+    .property-image-container {
+        position: relative;
+        height: 220px;
+        overflow: hidden;
+    }
+    
+    .property-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .property-card:hover .property-image {
+        transform: scale(1.05);
+    }
+    
+    .property-image-placeholder {
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #6c757d;
+    }
+    
+    .property-image-placeholder i {
+        font-size: 3rem;
+        margin-bottom: 10px;
+    }
+    
+    .property-badge {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        background: var(--secondary-color);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+    
+    .property-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .property-card:hover .property-overlay {
+        opacity: 1;
+    }
+    
+    .property-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .btn-action {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        border: 2px solid white;
+    }
+    
+    .btn-action.view {
+        background: rgba(52, 152, 219, 0.9);
+    }
+    
+    .btn-action.favorite {
+        background: rgba(231, 76, 60, 0.9);
+        border: 2px solid white;
+        cursor: pointer;
+    }
+    
+    .btn-action:hover {
+        transform: scale(1.1);
+        color: white;
+    }
+    
+    .property-content {
+        padding: 20px;
+    }
+    
+    .property-title {
+        font-weight: 700;
+        color: var(--dark-color);
+        margin-bottom: 10px;
+        font-size: 1.1rem;
+        line-height: 1.3;
+        height: 2.6em;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    
+    .property-location {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #666;
+        margin-bottom: 10px;
+        font-size: 0.9rem;
+    }
+    
+    .property-location i {
+        color: var(--accent-color);
+    }
+    
+    .property-price {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 15px;
+    }
+    
+    .property-features {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .feature {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        color: #666;
+        font-size: 0.85rem;
+    }
+    
+    .feature i {
+        color: var(--secondary-color);
+    }
+    
+    .property-meta {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .meta-item i {
+        color: var(--secondary-color);
+    }
+    
+    .btn-view {
+        width: 100%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        padding: 10px 15px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn-view:hover {
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        color: white;
+    }
+    
+    /* No Results State */
+    .no-results {
+        background: white;
+        border-radius: 12px;
+        padding: 60px 40px;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .no-results-icon {
+        font-size: 4rem;
+        color: #ddd;
+    }
+    
+    .no-results h3 {
+        color: var(--dark-color);
+        font-weight: 600;
+    }
+    
+    .suggestions {
+        max-width: 400px;
+        margin: 0 auto;
+    }
+    
+    /* Pagination */
+    .pagination {
+        margin-bottom: 0;
+    }
+    
+    .page-link {
+        border: none;
+        color: var(--dark-color);
+        padding: 10px 15px;
+        margin: 0 5px;
+        border-radius: 8px;
+        transition: all 0.3s;
+    }
+    
+    .page-link:hover {
+        background-color: var(--light-color);
+        color: var(--dark-color);
+    }
+    
+    .page-item.active .page-link {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+    }
+    
+    @media (max-width: 768px) {
+        .search-header .d-flex {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .search-actions {
+            align-self: flex-end;
+        }
+        
+        .sort-options .d-flex {
+            flex-direction: column;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        
+        .sort-controls {
+            width: 100%;
+        }
+        
+        .sort-select {
+            width: 100%;
+        }
+        
+        .property-features {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .property-meta {
+            flex-direction: column;
+            gap: 8px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Toggle filters visibility
+        const filterToggle = document.getElementById('filterToggle');
+        const searchFilters = document.getElementById('searchFilters');
+        
+        filterToggle.addEventListener('click', function() {
+            searchFilters.style.display = searchFilters.style.display === 'none' ? 'block' : 'none';
+        });
+        
+        // Sort functionality
+        const sortSelect = document.getElementById('sortSelect');
+        sortSelect.addEventListener('change', function() {
+            // In a real implementation, this would submit a form or make an API call
+            console.log('Sort by:', this.value);
+            // For now, we'll just show a loading state
+            const propertyCards = document.querySelectorAll('.property-card');
+            propertyCards.forEach(card => {
+                card.style.opacity = '0.5';
+            });
+            
+            setTimeout(() => {
+                propertyCards.forEach(card => {
+                    card.style.opacity = '1';
+                });
+            }, 500);
+        });
+        
+        // Favorite button functionality
+        const favoriteButtons = document.querySelectorAll('.btn-action.favorite');
+        favoriteButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    this.style.background = 'rgba(231, 76, 60, 1)';
+                    // Show success message
+                    showToast('Property added to favorites!');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    this.style.background = 'rgba(231, 76, 60, 0.9)';
+                    // Show remove message
+                    showToast('Property removed from favorites!');
+                }
+            });
+        });
+        
+        // Add animation to property cards
+        const propertyCards = document.querySelectorAll('.property-card');
+        propertyCards.forEach((card, index) => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            
+            setTimeout(() => {
+                card.style.transition = 'all 0.5s ease';
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, index * 100);
+        });
+        
+        // Toast notification function
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.style.zIndex = '1050';
+            toast.innerHTML = `
+                <div class="toast show" role="alert">
+                    <div class="toast-header">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        <strong class="me-auto">Notification</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,298 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Profile Header Card -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="card-title mb-0"><i class="fas fa-user me-2"></i>Your Profile</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3 text-center">
+                            <div class="profile-avatar mb-3">
+                                <i class="fas fa-user-circle" style="font-size: 5rem; color: var(--secondary-color);"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <h2 class="profile-name">{{ user.name }}</h2>
+                            <p class="profile-email text-muted mb-2">
+                                <i class="fas fa-envelope me-2"></i>{{ user.email }}
+                            </p>
+                            <p class="mb-3">
+                                <strong>Account Type:</strong> 
+                                {% if user.is_owner %}
+                                    <span class="badge bg-primary fs-6">Property Owner</span>
+                                {% else %}
+                                    <span class="badge bg-success fs-6">Renter</span>
+                                {% endif %}
+                            </p>
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-calendar me-2"></i>
+                                <strong>Member Since:</strong> {{ user.created_at.strftime('%B %d, %Y') if user.created_at else 'Recently' }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Stats -->
+            <div class="profile-stats card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Profile Statistics
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        {% if user.is_owner %}
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-number text-primary">{{ user_properties|length }}</div>
+                                <div class="stat-label">Properties Listed</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-number text-success">{{ user_favorites|length }}</div>
+                                <div class="stat-label">Favorites</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="stat-item">
+                                <div class="stat-number text-info">
+                                    {{ user.created_at.strftime('%b %Y') if user.created_at else 'New' }}
+                                </div>
+                                <div class="stat-label">Member Since</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% if user.is_owner %}
+                        <div class="col-md-6">
+                            <a href="{{ url_for('add_property') }}" class="btn btn-primary w-100">
+                                <i class="fas fa-plus-circle me-2"></i>Add Property
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('owner_dashboard') }}" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-tachometer-alt me-2"></i>Owner Dashboard
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-6">
+                            <a href="{{ url_for('favorites') }}" class="btn btn-outline-success w-100">
+                                <i class="fas fa-heart me-2"></i>My Favorites
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-search me-2"></i>Browse Properties
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Properties (for Owners) -->
+            {% if user.is_owner and user_properties %}
+            <div class="recent-properties card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-home me-2"></i>Your Properties
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for property in user_properties[:3] %}
+                        <div class="col-md-4 mb-3">
+                            <div class="property-item border rounded p-3 h-100">
+                                <h6 class="property-title">{{ property.title|truncate(30) }}</h6>
+                                <p class="property-location text-muted small mb-2">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ property.location|truncate(25) }}
+                                </p>
+                                <p class="property-price text-primary fw-bold mb-2">₹{{ "{:,.0f}".format(property.rent) }}/month</p>
+                                <div class="property-actions">
+                                    <a href="{{ url_for('property_detail', prop_id=property.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>View
+                                    </a>
+                                    <a href="{{ url_for('edit_property', prop_id=property.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit me-1"></i>Edit
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if user_properties|length > 3 %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('owner_dashboard') }}" class="btn btn-outline-primary">
+                            View All Properties ({{ user_properties|length }})
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recent Activity -->
+            <div class="recent-activity card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user_favorites %}
+                    <div class="activity-item">
+                        <div class="d-flex align-items-center">
+                            <div class="activity-icon me-3">
+                                <i class="fas fa-heart text-success"></i>
+                            </div>
+                            <div class="activity-content">
+                                <p class="mb-1">You have {{ user_favorites|length }} favorite propert{{ 'y' if user_favorites|length == 1 else 'ies' }}</p>
+                                <small class="text-muted">Last updated: Just now</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-clock fa-2x mb-3"></i>
+                        <p>No recent activity to display</p>
+                        <small>Your interactions with properties will appear here</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 3px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .card-header {
+        background: white;
+        border-bottom: 1px solid #eee;
+        padding: 20px 25px;
+    }
+    
+    .card-title {
+        font-weight: 600;
+        color: var(--dark-color);
+        display: flex;
+        align-items: center;
+    }
+    
+    .profile-name {
+        font-weight: 700;
+        color: var(--dark-color);
+        margin-bottom: 5px;
+    }
+    
+    .profile-email {
+        font-size: 1.1rem;
+    }
+    
+    .profile-stats .stat-item {
+        padding: 15px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .btn {
+        border-radius: 8px;
+        padding: 12px 20px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+    
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .property-item {
+        background: #f8f9fa;
+        transition: all 0.3s;
+    }
+    
+    .property-item:hover {
+        background: white;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .property-title {
+        font-weight: 600;
+        color: var(--dark-color);
+    }
+    
+    .property-actions .btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        margin-right: 5px;
+    }
+    
+    .activity-item {
+        padding: 15px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    @media (max-width: 768px) {
+        .profile-name {
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 1.5rem;
+        }
+        
+        .btn {
+            padding: 10px 15px;
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}

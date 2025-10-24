@@ -1,0 +1,792 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container form-container">
+    <div class="property-form">
+        <!-- Page Header -->
+        <div class="page-header mb-4">
+            <div class="d-flex align-items-center mb-3">
+                <i class="fas fa-edit me-3" style="font-size: 2rem; color: var(--secondary-color);"></i>
+                <div>
+                    <h1 class="page-title mb-1">Edit Property</h1>
+                    <p class="page-subtitle text-muted">Update your property details</p>
+                </div>
+            </div>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" id="editPropertyForm">
+            {{ form.hidden_tag() }}
+            
+            <!-- Basic Information Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-info-circle"></i> Basic Information
+                </h3>
+                
+                <div class="mb-4">
+                    <label class="form-label">{{ form.title.label }}</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-heading"></i></span>
+                        {{ form.title(class_='form-control', placeholder='Enter property title') }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="form-label">{{ form.description.label }}</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-align-left"></i></span>
+                        {{ form.description(class_='form-control', placeholder='Describe your property', rows='5') }}
+                    </div>
+                    <div class="form-hint">Describe the key features, amenities, and what makes your property special</div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">{{ form.location.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                            {{ form.location(class_='form-control', placeholder='Enter full address') }}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-4">
+                        <label class="form-label">{{ form.rent.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text">₹</span>
+                            {{ form.rent(class_='form-control', placeholder='Monthly rent') }}
+                            <span class="input-group-text">/month</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Property Details Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-home"></i> Property Details
+                </h3>
+                
+                <div class="mb-4">
+                    <label class="form-label">{{ form.property_type.label }}</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-building"></i></span>
+                        {{ form.property_type(class_='form-select') }}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Image Section - UPDATED FOR MULTIPLE IMAGES -->
+<div class="form-section">
+    <h3 class="section-title">
+        <i class="fas fa-camera"></i> Property Images
+    </h3>
+    
+    <!-- Current Images -->
+    {% if property.get_images() %}
+    <div class="mb-4">
+        <label class="form-label">Current Images</label>
+        <div class="current-images-grid">
+            {% for image in property.get_images() %}
+            <div class="current-image-item">
+                <img src="{{ url_for('uploaded_file', filename=image) }}" 
+                     class="current-image-preview" 
+                     alt="Current property image {{ loop.index }}">
+                <div class="current-image-overlay">
+                    <span class="current-image-badge">Image {{ loop.index }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Option to replace all images -->
+        <div class="form-check mt-3">
+            <input class="form-check-input" type="checkbox" name="delete_existing_images" value="true" id="replaceImages">
+            <label class="form-check-label" for="replaceImages">
+                Replace all existing images with new ones
+            </label>
+        </div>
+        <div class="form-hint">Check this if you want to remove all current images and upload new ones</div>
+    </div>
+    {% else %}
+    <div class="mb-4">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>No images currently uploaded for this property.
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- New Image Upload -->
+    <div class="mb-4">
+        <label class="form-label">Upload New Images</label>
+        
+        <div class="image-upload-container" id="uploadContainer">
+            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+            <div class="upload-text">Upload New Property Images</div>
+            <div class="upload-subtext">Drag & drop or click to browse</div>
+            <div class="upload-subtext">You can upload multiple images</div>
+            <div class="upload-subtext">Recommended: 1200x800 pixels or larger</div>
+            <input type="file" class="d-none" id="imageInput" name="images" multiple accept="image/*">
+        </div>
+        
+        <!-- Image Previews Container -->
+        <div class="images-preview-container" id="imagesPreview">
+            <div class="preview-grid" id="previewGrid"></div>
+            <div class="no-images-message" id="noImagesMessage">
+                <i class="fas fa-images"></i>
+                <p>No new images selected</p>
+            </div>
+        </div>
+        
+        <!-- Upload Progress -->
+        <div class="upload-progress" id="uploadProgress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">0%</div>
+        </div>
+    </div>
+</div>
+            
+            <!-- Action Buttons -->
+            <div class="form-actions d-flex gap-3">
+                <a href="{{ url_for('owner_dashboard') }}" class="btn btn-secondary btn-cancel">
+                    <i class="fas fa-times me-2"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-primary btn-update">
+                    <i class="fas fa-save me-2"></i> Update Property
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto 50px;
+    }
+    
+    .property-form {
+        background-color: white;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .page-header {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 20px;
+    }
+    
+    .page-title {
+        font-weight: 700;
+        color: var(--dark-color);
+        margin: 0;
+    }
+    
+    .page-subtitle {
+        font-size: 1rem;
+        margin: 0;
+    }
+    
+    .form-section {
+        margin-bottom: 35px;
+        padding-bottom: 25px;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .form-section:last-of-type {
+        border-bottom: none;
+        margin-bottom: 20px;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark-color);
+        margin-bottom: 20px;
+        position: relative;
+        padding-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        border-radius: 3px;
+    }
+    
+    .section-title i {
+        color: var(--secondary-color);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 8px;
+    }
+    
+    .form-control, .form-select {
+        border-radius: 8px;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+    
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+    
+    .input-group-text {
+        background-color: var(--light-color);
+        border: 1px solid #ddd;
+        color: var(--dark-color);
+    }
+    
+    .form-hint {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    /* Current Images Grid - NEW STYLES */
+    .current-images-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .current-image-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .current-image-preview {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .current-image-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+        padding: 8px;
+    }
+    
+    .current-image-badge {
+        background-color: var(--secondary-color);
+        color: white;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    /* Form Check */
+    .form-check-input:checked {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    
+    .form-check-label {
+        font-weight: 500;
+        color: var(--dark-color);
+    }
+    
+    /* Image Upload Styles - UPDATED FOR MULTIPLE IMAGES */
+    .image-upload-container {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        padding: 30px;
+        text-align: center;
+        transition: all 0.3s;
+        background-color: #fafafa;
+        cursor: pointer;
+    }
+    
+    .image-upload-container:hover {
+        border-color: var(--secondary-color);
+        background-color: #f0f8ff;
+    }
+    
+    .image-upload-container.dragover {
+        border-color: var(--secondary-color);
+        background-color: #e6f2ff;
+        transform: scale(1.02);
+    }
+    
+    .upload-icon {
+        font-size: 3rem;
+        color: #ccc;
+        margin-bottom: 15px;
+        transition: color 0.3s;
+    }
+    
+    .image-upload-container:hover .upload-icon {
+        color: var(--secondary-color);
+    }
+    
+    .upload-text {
+        font-weight: 600;
+        color: var(--dark-color);
+        margin-bottom: 5px;
+    }
+    
+    .upload-subtext {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 2px;
+    }
+    
+    /* Images Preview Container - NEW STYLES */
+    .images-preview-container {
+        display: none;
+        margin-top: 20px;
+    }
+    
+    .images-preview-container.has-images {
+        display: block;
+    }
+    
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .preview-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s;
+    }
+    
+    .preview-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    }
+    
+    .preview-image {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .preview-remove {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background: rgba(231, 76, 60, 0.9);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+    
+    .preview-item:hover .preview-remove {
+        opacity: 1;
+    }
+    
+    .preview-info {
+        padding: 8px;
+        background: white;
+        font-size: 0.75rem;
+        color: #666;
+    }
+    
+    .preview-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-bottom: 2px;
+    }
+    
+    .preview-size {
+        color: #999;
+        font-size: 0.7rem;
+    }
+    
+    .no-images-message {
+        text-align: center;
+        padding: 40px 20px;
+        color: #6c757d;
+    }
+    
+    .no-images-message i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        color: #ddd;
+    }
+    
+    /* Upload Progress - NEW STYLES */
+    .upload-progress {
+        display: none;
+        margin-top: 15px;
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .upload-progress.uploading {
+        display: flex;
+    }
+    
+    .progress-bar {
+        flex: 1;
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border-radius: 4px;
+        width: 0%;
+        transition: width 0.3s ease;
+    }
+    
+    .progress-text {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--dark-color);
+        min-width: 40px;
+    }
+    
+    /* Button Styles */
+    .form-actions {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+    }
+    
+    .btn-cancel {
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    
+    .btn-update {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        flex: 1;
+    }
+    
+    .btn-update:hover {
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    @media (max-width: 768px) {
+        .form-container {
+            padding: 0 15px;
+        }
+        
+        .property-form {
+            padding: 20px;
+        }
+        
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .current-images-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+        
+        .preview-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadContainer = document.getElementById('uploadContainer');
+        const imageInput = document.getElementById('imageInput');
+        const imagesPreview = document.getElementById('imagesPreview');
+        const previewGrid = document.getElementById('previewGrid');
+        const noImagesMessage = document.getElementById('noImagesMessage');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        
+        let uploadedFiles = [];
+        const MAX_FILES = 10;
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+        // Click on container to trigger file input
+        uploadContainer.addEventListener('click', function() {
+            imageInput.click();
+        });
+        
+        // Handle file selection
+        imageInput.addEventListener('change', function() {
+            handleFiles(this.files);
+        });
+        
+        // Drag and drop functionality
+        uploadContainer.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        uploadContainer.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+        
+        uploadContainer.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+        
+        function handleFiles(files) {
+            const validFiles = Array.from(files).filter(file => {
+                // Check file type
+                if (!file.type.startsWith('image/')) {
+                    showToast('Please select only image files.', 'error');
+                    return false;
+                }
+                
+                // Check file size
+                if (file.size > MAX_FILE_SIZE) {
+                    showToast(`File "${file.name}" is too large. Maximum size is 10MB.`, 'error');
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            // Check total file count
+            if (uploadedFiles.length + validFiles.length > MAX_FILES) {
+                showToast(`You can only upload up to ${MAX_FILES} images.`, 'error');
+                validFiles.splice(MAX_FILES - uploadedFiles.length);
+            }
+            
+            if (validFiles.length > 0) {
+                // Simulate upload progress
+                simulateUploadProgress(validFiles);
+                
+                // Add to uploaded files
+                uploadedFiles = [...uploadedFiles, ...validFiles];
+                
+                // Update preview
+                updatePreview();
+                
+                showToast(`Added ${validFiles.length} image(s) successfully.`, 'success');
+            }
+        }
+        
+        function simulateUploadProgress(files) {
+            uploadProgress.classList.add('uploading');
+            let progress = 0;
+            
+            const interval = setInterval(() => {
+                progress += 5;
+                progressFill.style.width = `${progress}%`;
+                progressText.textContent = `${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        uploadProgress.classList.remove('uploading');
+                        progressFill.style.width = '0%';
+                        progressText.textContent = '0%';
+                    }, 500);
+                }
+            }, 50);
+        }
+        
+        function updatePreview() {
+            previewGrid.innerHTML = '';
+            
+            if (uploadedFiles.length === 0) {
+                imagesPreview.classList.remove('has-images');
+                noImagesMessage.style.display = 'block';
+                return;
+            }
+            
+            imagesPreview.classList.add('has-images');
+            noImagesMessage.style.display = 'none';
+            
+            uploadedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" class="preview-image" alt="Preview">
+                        <button type="button" class="preview-remove" data-index="${index}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <div class="preview-info">
+                            <div class="preview-name">${file.name}</div>
+                            <div class="preview-size">${formatFileSize(file.size)}</div>
+                        </div>
+                    `;
+                    
+                    previewGrid.appendChild(previewItem);
+                    
+                    // Add remove functionality
+                    const removeBtn = previewItem.querySelector('.preview-remove');
+                    removeBtn.addEventListener('click', function() {
+                        const removeIndex = parseInt(this.getAttribute('data-index'));
+                        removeImage(removeIndex);
+                    });
+                };
+                
+                reader.readAsDataURL(file);
+            });
+            
+            // Update image counter
+            updateImageCounter();
+        }
+        
+        function removeImage(index) {
+            uploadedFiles.splice(index, 1);
+            updatePreview();
+            showToast('Image removed.', 'info');
+        }
+        
+        function updateImageCounter() {
+            // Remove existing counter
+            const existingCounter = document.querySelector('.image-counter');
+            if (existingCounter) {
+                existingCounter.remove();
+            }
+            
+            // Add new counter
+            const counter = document.createElement('div');
+            counter.className = 'image-counter';
+            counter.textContent = `${uploadedFiles.length} of ${MAX_FILES} images selected`;
+            imagesPreview.appendChild(counter);
+        }
+        
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `position-fixed bottom-0 end-0 p-3`;
+            toast.style.zIndex = '1050';
+            
+            const bgColor = type === 'error' ? 'var(--accent-color)' : 
+                           type === 'success' ? 'var(--success-color)' : 'var(--secondary-color)';
+            
+            toast.innerHTML = `
+                <div class="toast show" role="alert" style="border-left: 4px solid ${bgColor}">
+                    <div class="toast-header">
+                        <i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'success' ? 'check-circle' : 'info-circle'} me-2" style="color: ${bgColor}"></i>
+                        <strong class="me-auto">${type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 4000);
+        }
+        
+        // Form validation
+        const form = document.getElementById('editPropertyForm');
+        form.addEventListener('submit', function(e) {
+            let valid = true;
+            const requiredFields = form.querySelectorAll('[required]');
+            
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    valid = false;
+                    field.classList.add('is-invalid');
+                } else {
+                    field.classList.remove('is-invalid');
+                }
+            });
+            
+            if (!valid) {
+                e.preventDefault();
+                showToast('Please fill in all required fields.', 'error');
+            }
+        });
+        
+        // Add character count for description
+        const descriptionField = document.querySelector('textarea[name="description"]');
+        if (descriptionField) {
+            const charCount = document.createElement('div');
+            charCount.className = 'form-hint text-end';
+            charCount.textContent = '0/500 characters';
+            descriptionField.parentNode.appendChild(charCount);
+            
+            descriptionField.addEventListener('input', function() {
+                const count = this.value.length;
+                charCount.textContent = `${count}/500 characters`;
+                
+                if (count > 500) {
+                    charCount.style.color = 'var(--accent-color)';
+                } else {
+                    charCount.style.color = '#6c757d';
+                }
+            });
+            
+            // Initialize character count
+            const initialCount = descriptionField.value.length;
+            charCount.textContent = `${initialCount}/500 characters`;
+            if (initialCount > 500) {
+                charCount.style.color = 'var(--accent-color)';
+            }
+        }
+    });
+</script>
+{% endblock %}

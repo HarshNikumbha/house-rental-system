@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="login-container">
+    <div class="login-card">
+        <div class="card-header">
+            <h3><i class="fas fa-home"></i> House Rental System</h3>
+            <p class="mb-0 mt-2">Find your perfect home</p>
+        </div>
+        <div class="card-body">
+            <div class="text-center mb-4">
+                <i class="fas fa-key property-icon" style="font-size: 2rem; color: var(--secondary-color);"></i>
+                <h4>Welcome Back</h4>
+                <p class="text-muted">Sign in to your account</p>
+            </div>
+            
+            <form method="post" autocomplete="off">
+                {{ form.hidden_tag() }}
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.email.label }}</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                        {{ form.email(class_='form-control', autocomplete='off', value='', placeholder='Enter your email') }}
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">{{ form.password.label }}</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                        {{ form.password(class_='form-control', autocomplete='new-password', value='', placeholder='Enter your password') }}
+                    </div>
+                </div>
+
+                <div class="mb-3 d-flex justify-content-between align-items-center">
+                    <div class="form-check">
+                        {{ form.remember(class_='form-check-input') }}
+                        {{ form.remember.label(class_='form-check-label') }}
+                    </div>
+                    <div class="forgot-password">
+                        <a href="{{ url_for('forgot_password') }}">Forgot Password?</a>
+                    </div>
+                </div>
+
+                <button class="btn btn-login">Login</button>
+            </form>
+            
+            <div class="divider">
+                <span>Or continue with</span>
+            </div>
+            
+            <div class="social-login">
+                <button type="button" class="social-btn facebook" onclick="socialLogin('facebook')">
+                    <i class="fab fa-facebook-f"></i>
+                </button>
+                <button type="button" class="social-btn google" onclick="socialLogin('google')">
+                    <i class="fab fa-google"></i>
+                </button>
+                <button type="button" class="social-btn twitter" onclick="socialLogin('twitter')">
+                    <i class="fab fa-twitter"></i>
+                </button>
+            </div>
+            
+            <div class="register-link">
+                Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .login-container {
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+        animation: fadeIn 0.8s ease-out;
+    }
+    
+    .login-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        transition: transform 0.3s ease;
+    }
+    
+    .login-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        color: white;
+        text-align: center;
+        padding: 25px 20px;
+        position: relative;
+    }
+    
+    .card-header h3 {
+        margin: 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .card-header h3 i {
+        font-size: 1.5rem;
+    }
+    
+    .card-body {
+        padding: 30px;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        padding: 12px 15px;
+        border: 1px solid #ddd;
+        transition: all 0.3s;
+    }
+    
+    .form-control:focus {
+        border-color: var(--secondary-color);
+        box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: var(--dark-color);
+        margin-bottom: 8px;
+    }
+    
+    .input-group {
+        position: relative;
+    }
+    
+    .input-group-text {
+        background-color: var(--light-color);
+        border: 1px solid #ddd;
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+    }
+    
+    .input-group .form-control {
+        border-left: none;
+        border-radius: 0 8px 8px 0;
+    }
+    
+    .btn-login {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        width: 100%;
+        transition: all 0.3s;
+        margin-top: 10px;
+    }
+    
+    .btn-login:hover {
+        background: linear-gradient(135deg, var(--secondary-color), var(--primary-color));
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-check-input:checked {
+        background-color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+    
+    .form-check-label {
+        color: var(--dark-color);
+    }
+    
+    .forgot-password {
+        text-align: right;
+        margin-top: 10px;
+    }
+    
+    .forgot-password a {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+    
+    .forgot-password a:hover {
+        text-decoration: underline;
+    }
+    
+    .register-link {
+        text-align: center;
+        margin-top: 20px;
+        color: var(--dark-color);
+    }
+    
+    .register-link a {
+        color: var(--secondary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .register-link a:hover {
+        text-decoration: underline;
+    }
+    
+    .divider {
+        display: flex;
+        align-items: center;
+        margin: 20px 0;
+    }
+    
+    .divider::before, .divider::after {
+        content: "";
+        flex: 1;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .divider span {
+        padding: 0 10px;
+        color: #777;
+        font-size: 0.9rem;
+    }
+    
+    .social-login {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 15px;
+    }
+    
+    .social-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .social-btn:hover:not(:disabled) {
+        transform: translateY(-3px);
+    }
+    
+    .social-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    
+    .facebook {
+        background-color: #3b5998;
+    }
+    
+    .google {
+        background-color: #db4437;
+    }
+    
+    .twitter {
+        background-color: #1da1f2;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .property-icon {
+        font-size: 1.8rem;
+        color: var(--secondary-color);
+        margin-bottom: 10px;
+    }
+    
+    @media (max-width: 576px) {
+        .login-container {
+            padding: 0 15px;
+        }
+        
+        .card-body {
+            padding: 25px 20px;
+        }
+    }
+
+    /* Toast Styles */
+    .toast {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+</style>
+
+<script>
+    // Ensure fields are empty on page load
+    window.onload = function() {
+        const emailField = document.querySelector('input[name="email"]');
+        const passwordField = document.querySelector('input[name="password"]');
+        if (emailField) emailField.value = '';
+        if (passwordField) passwordField.value = '';
+    };
+
+    function socialLogin(provider) {
+        // Show loading state
+        const buttons = document.querySelectorAll('.social-btn');
+        buttons.forEach(btn => btn.disabled = true);
+        
+        // Simulate social login process
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed bottom-0 end-0 p-3';
+        toast.style.zIndex = '1050';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header">
+                    <i class="fas fa-info-circle text-primary me-2"></i>
+                    <strong class="me-auto">Social Login</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${provider.charAt(0).toUpperCase() + provider.slice(1)} login functionality coming soon!
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        // Remove toast after 3 seconds and re-enable buttons
+        setTimeout(() => {
+            toast.remove();
+            buttons.forEach(btn => btn.disabled = false);
+        }, 3000);
+    }
+
+    // Add hover effects for social buttons
+    document.addEventListener('DOMContentLoaded', function() {
+        const socialBtns = document.querySelectorAll('.social-btn');
+        socialBtns.forEach(btn => {
+            btn.addEventListener('mouseenter', function() {
+                if (!this.disabled) {
+                    this.style.transform = 'translateY(-3px)';
+                }
+            });
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    });
+</script>
+{% endblock %}
